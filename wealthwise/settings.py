@@ -1,11 +1,15 @@
 import os
+import platform
 from pathlib import Path
 import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(DEBUG=(bool, True))
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+_env_file = os.path.join(BASE_DIR, '.env')
+_has_env = os.path.exists(_env_file)
+if _has_env:
+    environ.Env.read_env(_env_file)
 
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-wealthwise-dev-key-change-in-production')
 DEBUG = env('DEBUG', default=True)
@@ -64,17 +68,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'wealthwise.wsgi.application'
 
-# Database — uses SQLite for development, PostgreSQL in production
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DB_NAME', default='wealthwise_db'),
-        'USER': env('DB_USER', default='wealthwise_user'),
-        'PASSWORD': env('DB_PASSWORD', default='wealthwise2024'),
-        'HOST': env('DB_HOST', default='localhost'),
-        'PORT': env('DB_PORT', default='5432'),
+# Database — SQLite by default (no .env needed), PostgreSQL when .env sets DB_NAME
+_use_sqlite = env.bool('USE_SQLITE', default=not _has_env)
+if _use_sqlite:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': env('DB_NAME', default='wealthwise_db'),
+            'USER': env('DB_USER', default='wealthwise_user'),
+            'PASSWORD': env('DB_PASSWORD', default='wealthwise2024'),
+            'HOST': env('DB_HOST', default='localhost'),
+            'PORT': env('DB_PORT', default='5432'),
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -121,7 +134,13 @@ EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
 
 # Tesseract OCR path (update for your OS)
-TESSERACT_CMD = env('TESSERACT_CMD', default='/opt/homebrew/bin/tesseract')
+# Tesseract — auto-detect by OS, override with TESSERACT_CMD env var
+_default_tesseract = (
+    r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+    if platform.system() == 'Windows'
+    else '/opt/homebrew/bin/tesseract'
+)
+TESSERACT_CMD = env('TESSERACT_CMD', default=_default_tesseract)
 
 # ML Model paths
 ML_MODELS_DIR = BASE_DIR / 'ml_models'
