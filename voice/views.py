@@ -42,7 +42,8 @@ def process_voice(request):
         if category_name:
             cat = Category.objects.filter(
                 Q(user=request.user) | Q(is_default=True),
-                name__iexact=category_name
+            ).filter(
+                Q(name__iexact=category_name) | Q(name__icontains=category_name.split('&')[0].strip())
             ).first()
             if cat:
                 category_data = {'id': cat.id, 'name': cat.name, 'icon': cat.icon}

@@ -67,22 +67,14 @@ WSGI_APPLICATION = 'wealthwise.wsgi.application'
 # Database — uses SQLite for development, PostgreSQL in production
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env('DB_NAME', default='wealthwise_db'),
+        'USER': env('DB_USER', default='wealthwise_user'),
+        'PASSWORD': env('DB_PASSWORD', default='wealthwise2024'),
+        'HOST': env('DB_HOST', default='localhost'),
+        'PORT': env('DB_PORT', default='5432'),
     }
 }
-
-# Uncomment below for PostgreSQL:
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': env('DB_NAME', default='wealthwise_db'),
-#         'USER': env('DB_USER', default='postgres'),
-#         'PASSWORD': env('DB_PASSWORD', default=''),
-#         'HOST': env('DB_HOST', default='localhost'),
-#         'PORT': env('DB_PORT', default='5432'),
-#     }
-# }
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -129,7 +121,7 @@ EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
 
 # Tesseract OCR path (update for your OS)
-TESSERACT_CMD = env('TESSERACT_CMD', default='/usr/bin/tesseract')
+TESSERACT_CMD = env('TESSERACT_CMD', default='/opt/homebrew/bin/tesseract')
 
 # ML Model paths
 ML_MODELS_DIR = BASE_DIR / 'ml_models'

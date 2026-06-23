@@ -24,15 +24,20 @@ DATE_MAP = {
 }
 
 CATEGORY_KEYWORDS = {
-    'food': ['food', 'restaurant', 'lunch', 'dinner', 'breakfast', 'snack', 'grocery',
-             'zomato', 'swiggy', 'cafe', 'coffee', 'pizza', 'burger'],
-    'transport': ['uber', 'ola', 'auto', 'taxi', 'bus', 'metro', 'fuel', 'petrol', 'train', 'cab'],
-    'shopping': ['shopping', 'clothes', 'amazon', 'flipkart', 'myntra', 'shoes', 'bag'],
-    'health': ['medicine', 'pharmacy', 'doctor', 'hospital', 'clinic', 'lab', 'gym'],
-    'utilities': ['electricity', 'water', 'gas', 'internet', 'wifi', 'recharge', 'bill', 'rent'],
-    'entertainment': ['movie', 'netflix', 'prime', 'hotstar', 'spotify', 'game'],
-    'education': ['school', 'college', 'fees', 'course', 'books', 'tuition'],
-    'salary': ['salary', 'stipend', 'freelance', 'payment received'],
+    'Food & Dining': ['food', 'restaurant', 'lunch', 'dinner', 'breakfast', 'snack',
+                      'zomato', 'swiggy', 'cafe', 'coffee', 'pizza', 'burger', 'biryani'],
+    'Transport': ['uber', 'ola', 'auto', 'taxi', 'bus', 'metro', 'fuel', 'petrol', 'train', 'cab', 'rapido'],
+    'Shopping': ['shopping', 'clothes', 'amazon', 'flipkart', 'myntra', 'shoes', 'bag', 'bought'],
+    'Health & Medical': ['medicine', 'pharmacy', 'doctor', 'hospital', 'clinic', 'lab', 'medical', 'pharmeasy'],
+    'Fitness': ['gym', 'yoga', 'fitness', 'protein'],
+    'Utilities': ['electricity', 'water', 'gas', 'internet', 'wifi', 'recharge', 'bill', 'mobile bill'],
+    'Housing & Rent': ['rent', 'house rent', 'maintenance'],
+    'Entertainment': ['movie', 'netflix', 'prime', 'hotstar', 'spotify', 'game', 'pvr', 'cinema'],
+    'Education': ['school', 'college', 'fees', 'course', 'books', 'tuition', 'udemy'],
+    'Travel': ['hotel', 'flight', 'holiday', 'vacation', 'trip', 'booking'],
+    'Salary': ['salary', 'stipend'],
+    'Freelance': ['freelance', 'payment received', 'project payment'],
+    'Cashback/Refund': ['cashback', 'refund'],
 }
 
 

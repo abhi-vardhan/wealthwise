@@ -9,8 +9,8 @@ import datetime
 
 @login_required
 def upload_receipt(request):
-    if request.method == 'POST' and request.FILES.get('receipt_image'):
-        image = request.FILES['receipt_image']
+    if request.method == 'POST' and request.FILES.get('image'):
+        image = request.FILES['image']
         receipt = Receipt.objects.create(user=request.user, image=image)
 
         # Run OCR
@@ -35,9 +35,18 @@ def review_receipt(request, pk):
         from transactions.models import Transaction, Category
         from django.db.models import Q
         category_id = request.POST.get('category')
-        amount = request.POST.get('amount')
-        description = request.POST.get('description')
-        date_str = request.POST.get('date') or str(datetime.date.today())
+        amount_raw = request.POST.get('amount', '').strip()
+        description = request.POST.get('description', '').strip()
+        date_str = request.POST.get('date', '') or str(datetime.date.today())
+
+        # Validate amount
+        try:
+            amount = float(amount_raw.replace(',', '')) if amount_raw else None
+            if not amount or amount <= 0:
+                raise ValueError('invalid')
+        except (ValueError, TypeError):
+            messages.error(request, 'Please enter a valid amount before saving.')
+            return redirect('review_receipt', pk=pk)
 
         category = None
         if category_id:
@@ -46,8 +55,8 @@ def review_receipt(request, pk):
         try:
             t = Transaction.objects.create(
                 user=request.user,
-                amount=float(amount),
-                description=description or receipt.extracted_data.get('merchant', 'Receipt'),
+                amount=amount,
+                description=description or receipt.extracted_data.get('merchant', 'Receipt scan'),
                 date=date_str,
                 transaction_type='expense',
                 payment_method='cash',
@@ -56,7 +65,7 @@ def review_receipt(request, pk):
             )
             receipt.transaction = t
             receipt.save()
-            messages.success(request, 'Transaction saved from receipt!')
+            messages.success(request, f'Transaction ₹{amount:,.2f} saved from receipt!')
             return redirect('transaction_list')
         except Exception as e:
             messages.error(request, f'Error saving: {e}')
@@ -66,7 +75,24 @@ def review_receipt(request, pk):
     categories = Category.objects.filter(
         Q(user=request.user) | Q(is_default=True), category_type='expense'
     )
+
+    # Prefill from extracted OCR data
+    extracted = receipt.extracted_data or {}
+    prefill = {
+        'amount': extracted.get('total') or '',
+        'description': extracted.get('merchant') or 'Receipt scan',
+        'date': extracted.get('date') or str(datetime.date.today()),
+    }
+
+    # AI-suggest category from merchant name
+    suggested_cat = None
+    if prefill['description']:
+        from analytics.ml.categorizer import categorize_transaction
+        suggested_cat = categorize_transaction(prefill['description'])
+
     return render(request, 'receipts/review.html', {
         'receipt': receipt,
         'categories': categories,
+        'prefill': prefill,
+        'suggested_cat': suggested_cat,
     })

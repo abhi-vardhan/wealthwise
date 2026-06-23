@@ -8,24 +8,33 @@ import pickle
 import numpy as np
 from pathlib import Path
 
-# Keyword-based fallback categories
+# Keyword-based fallback categories — keys must match exact DB category names
 KEYWORD_MAP = {
-    'food': ['zomato', 'swiggy', 'restaurant', 'cafe', 'pizza', 'burger', 'biryani',
-             'lunch', 'dinner', 'breakfast', 'snack', 'coffee', 'tea', 'grocery', 'supermarket'],
-    'transport': ['uber', 'ola', 'rapido', 'metro', 'bus', 'auto', 'taxi', 'fuel',
-                  'petrol', 'diesel', 'toll', 'parking', 'train', 'flight', 'irctc'],
-    'shopping': ['amazon', 'flipkart', 'myntra', 'meesho', 'nykaa', 'clothes',
-                 'shoes', 'bag', 'watch', 'jewellery', 'furniture'],
-    'health': ['hospital', 'clinic', 'medicine', 'pharmacy', 'doctor', 'dentist',
-               'medplus', 'apollo', 'diagnostic', 'lab test', 'gym', 'yoga'],
-    'utilities': ['electricity', 'water', 'gas', 'internet', 'broadband', 'mobile',
-                  'recharge', 'wifi', 'airtel', 'jio', 'bsnl', 'rent'],
-    'entertainment': ['netflix', 'prime', 'hotstar', 'spotify', 'movie', 'cinema',
-                      'concert', 'game', 'play', 'amusement', 'disney'],
-    'education': ['school', 'college', 'university', 'course', 'udemy', 'coursera',
-                  'books', 'stationery', 'tuition', 'fees'],
-    'travel': ['hotel', 'resort', 'airbnb', 'flight', 'holiday', 'vacation', 'trip',
+    'Food & Dining': ['zomato', 'swiggy', 'restaurant', 'cafe', 'pizza', 'burger', 'biryani',
+                      'lunch', 'dinner', 'breakfast', 'snack', 'coffee', 'tea', 'food delivery',
+                      'dominos', 'mcdonalds', 'kfc', 'subway', 'chai'],
+    'Transport': ['uber', 'ola', 'rapido', 'metro', 'bus', 'auto', 'taxi', 'fuel',
+                  'petrol', 'diesel', 'toll', 'parking', 'train', 'irctc', 'cab ride'],
+    'Shopping': ['amazon', 'flipkart', 'myntra', 'meesho', 'nykaa', 'clothes',
+                 'shoes', 'bag', 'watch', 'jewellery', 'furniture', 'shopping'],
+    'Health & Medical': ['hospital', 'clinic', 'medicine', 'pharmacy', 'doctor', 'dentist',
+                         'medplus', 'apollo', 'diagnostic', 'lab test', 'pharmeasy', 'medical'],
+    'Fitness': ['gym', 'yoga', 'fitness', 'protein', 'sports'],
+    'Utilities': ['electricity', 'water', 'gas', 'internet', 'broadband', 'mobile bill',
+                  'recharge', 'wifi', 'airtel', 'jio', 'bsnl', 'bill payment'],
+    'Housing & Rent': ['rent', 'house rent', 'maintenance', 'society'],
+    'Entertainment': ['netflix', 'prime', 'hotstar', 'spotify', 'movie', 'cinema',
+                      'concert', 'game', 'play', 'amusement', 'disney', 'pvr'],
+    'Education': ['school', 'college', 'university', 'course', 'udemy', 'coursera',
+                  'books', 'stationery', 'tuition', 'fees', 'exam'],
+    'Travel': ['hotel', 'resort', 'airbnb', 'flight', 'holiday', 'vacation', 'trip',
                'makemytrip', 'goibibo', 'booking'],
+    'Salary': ['salary', 'salary credit', 'monthly salary'],
+    'Freelance': ['freelance', 'project payment', 'consulting'],
+    'Cashback/Refund': ['cashback', 'refund', 'reward'],
+    'Gifts': ['gift', 'present', 'donation'],
+    'Insurance': ['insurance', 'premium', 'lic'],
+    'Investment': ['investment', 'mutual fund', 'sip', 'stocks', 'shares'],
 }
 
 
@@ -59,10 +68,18 @@ def categorize_transaction(description: str):
         except Exception:
             pass
 
-    # Keyword fallback
+    # Keyword fallback — check each word/phrase in text against keyword list
     for category_name, keywords in KEYWORD_MAP.items():
         if any(kw in text for kw in keywords):
-            category = Category.objects.filter(name__iexact=category_name).first()
+            category = Category.objects.filter(
+                name__iexact=category_name, is_default=True
+            ).first()
+            if not category:
+                # Try partial match
+                category = Category.objects.filter(
+                    name__icontains=category_name.split('&')[0].strip(),
+                    is_default=True
+                ).first()
             if category:
                 return category
 

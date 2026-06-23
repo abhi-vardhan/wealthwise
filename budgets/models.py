@@ -15,6 +15,8 @@ class Budget(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='budgets')
     name = models.CharField(max_length=100)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True,
+                                 help_text='If set, tracks spending only for this category')
     period = models.CharField(max_length=10, choices=PERIOD_CHOICES, default='monthly')
     start_date = models.DateField(default=datetime.date.today)
     end_date = models.DateField()
@@ -28,13 +30,15 @@ class Budget(models.Model):
     def get_spent(self):
         from transactions.models import Transaction
         from django.db.models import Sum
-        spent = Transaction.objects.filter(
+        qs = Transaction.objects.filter(
             user=self.user,
             transaction_type='expense',
             date__gte=self.start_date,
             date__lte=self.end_date,
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
-        return spent
+        )
+        if self.category_id:
+            qs = qs.filter(category=self.category)
+        return qs.aggregate(Sum('amount'))['amount__sum'] or 0
 
     def get_remaining(self):
         return self.total_amount - self.get_spent()
