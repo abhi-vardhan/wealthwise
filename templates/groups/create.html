@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Create Group{% endblock %}
+{% block page_title %}Create Expense Group{% endblock %}
+{% block page_subtitle %}Start splitting bills with friends and family{% endblock %}
+
+{% block content %}
+<div style="max-width:540px">
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+      <div style="display:grid;gap:1rem">
+        {% for field in form %}
+        <div>
+          <label style="display:block;font-size:0.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<p style="color:#dc2626;font-size:0.72rem;margin:3px 0 0">{{ field.errors.0 }}</p>{% endif %}
+          {% if field.help_text %}<p style="color:#94a3b8;font-size:0.7rem;margin:3px 0 0">{{ field.help_text }}</p>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <div style="display:flex;gap:0.75rem;margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid #f1f5f9">
+        <button type="submit" class="btn-primary" style="flex:1;text-align:center">
+          <i class="fas fa-users" style="margin-right:6px"></i>Create Group
+        </button>
+        <a href="{% url 'group_list' %}" class="btn-secondary" style="flex:1;text-align:center">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ budget.name }}{% endblock %}
+{% block page_title %}{{ budget.name }}{% endblock %}
+{% block page_subtitle %}{{ budget.period|title }} budget · {{ budget.start_date }} to {{ budget.end_date }}{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+  <div class="xl:col-span-2 space-y-6">
+    <div class="card">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <p class="text-3xl font-bold {% if budget.get_remaining >= 0 %}text-emerald-600{% else %}text-rose-600{% endif %}">
+            {{ user.profile.get_currency_symbol }}{{ budget.get_remaining|floatformat:0|intcomma }}
+          </p>
+          <p class="text-sm text-gray-400">remaining of {{ user.profile.get_currency_symbol }}{{ budget.total_amount|floatformat:0|intcomma }}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-2xl font-bold {% if budget.get_percentage_used >= 90 %}text-rose-600{% elif budget.get_percentage_used >= 70 %}text-amber-600{% else %}text-indigo-600{% endif %}">
+            {{ budget.get_percentage_used }}%
+          </p>
+          <p class="text-sm text-gray-400">{{ user.profile.get_currency_symbol }}{{ budget.get_spent|floatformat:0|intcomma }} spent</p>
+        </div>
+      </div>
+      <div class="h-4 bg-gray-100 rounded-full overflow-hidden">
+        <div class="progress-bar h-full rounded-full {% if budget.get_percentage_used >= 90 %}bg-rose-500{% elif budget.get_percentage_used >= 70 %}bg-amber-500{% else %}bg-indigo-500{% endif %}"
+          style="width: {{ budget.get_percentage_used }}%"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="text-base font-semibold text-gray-800 mb-4">Category Allocations</h2>
+      {% if category_budgets %}
+      <div class="space-y-4">
+        {% for cb in category_budgets %}
+        <div class="p-4 bg-gray-50 rounded-xl">
+          <div class="flex items-center justify-between mb-2">
+            <span class="flex items-center gap-2 text-sm font-medium">{{ cb.category.icon }} {{ cb.category.name }}</span>
+            <span class="text-sm text-gray-500">
+              {{ user.profile.get_currency_symbol }}{{ cb.get_spent|floatformat:0|intcomma }} / {{ user.profile.get_currency_symbol }}{{ cb.allocated_amount|floatformat:0|intcomma }}
+            </span>
+          </div>
+          <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div class="progress-bar h-full rounded-full {% if cb.get_percentage_used >= 90 %}bg-rose-500{% elif cb.get_percentage_used >= 70 %}bg-amber-500{% else %}bg-indigo-500{% endif %}"
+              style="width: {{ cb.get_percentage_used }}%"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-gray-400 text-sm">No category allocations yet. Add some below.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card h-fit">
+    <h2 class="text-base font-semibold text-gray-800 mb-4">Add Category Limit</h2>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in cat_form %}
+      <div class="mb-3">
+        <label class="text-xs font-semibold text-gray-500 uppercase mb-1 block">{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+      <button type="submit" class="btn-primary w-full mt-2">Add Allocation</button>
+    </form>
+    <hr class="my-4 border-gray-100" />
+    <a href="{% url 'delete_budget' budget.pk %}"
+       onclick="return confirm('Delete this entire budget?')"
+       class="text-rose-500 hover:text-rose-700 text-sm font-medium transition-colors block text-center">
+      <i class="fas fa-trash mr-1"></i>Delete Budget
+    </a>
+  </div>
+</div>
+{% endblock %}

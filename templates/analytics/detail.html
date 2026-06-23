@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block title %}AI Analytics{% endblock %}
+{% block page_title %}AI Analytics{% endblock %}
+{% block page_subtitle %}Deep insights powered by machine learning{% endblock %}
+
+{% block content %}
+<!-- AI Recommendations -->
+{% if recommendations %}
+<div class="card" style="margin-bottom:1.25rem;border-left:4px solid #4f46e5">
+  <h3 style="font-size:0.875rem;font-weight:700;color:#1e293b;margin:0 0 1rem;display:flex;align-items:center;gap:8px">
+    <i class="fas fa-robot" style="color:#4f46e5"></i>AI Recommendations
+  </h3>
+  <div style="display:grid;gap:0.75rem">
+    {% for rec in recommendations %}
+    <div style="display:flex;gap:0.75rem;padding:0.75rem;background:#f8fafc;border-radius:0.75rem;border-left:3px solid {% if rec.priority == 'high' %}#ef4444{% elif rec.priority == 'medium' %}#f59e0b{% else %}#22c55e{% endif %}">
+      <div style="width:32px;height:32px;border-radius:8px;background:{% if rec.priority == 'high' %}#fef2f2{% elif rec.priority == 'medium' %}#fffbeb{% else %}#f0fdf4{% endif %};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="fas {% if rec.priority == 'high' %}fa-exclamation-triangle" style="color:#ef4444{% elif rec.priority == 'medium' %}fa-info-circle" style="color:#f59e0b{% else %}fa-check-circle" style="color:#22c55e{% endif %};font-size:0.875rem"></i>
+      </div>
+      <div>
+        <p style="font-size:0.875rem;font-weight:600;color:#1e293b;margin:0 0 2px">{{ rec.title }}</p>
+        <p style="font-size:0.8rem;color:#64748b;margin:0">{{ rec.message }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Charts Row -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem">
+  <div class="card">
+    <h3 style="font-size:0.875rem;font-weight:700;color:#1e293b;margin:0 0 1rem">Spending by Category</h3>
+    <canvas id="catChart" height="220"></canvas>
+  </div>
+  <div class="card">
+    <h3 style="font-size:0.875rem;font-weight:700;color:#1e293b;margin:0 0 1rem">Monthly Trend (12 Months)</h3>
+    <canvas id="trendChart" height="220"></canvas>
+  </div>
+</div>
+
+<!-- 30-Day Forecast -->
+<div class="card" style="margin-bottom:1.25rem">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <h3 style="font-size:0.875rem;font-weight:700;color:#1e293b;margin:0;display:flex;align-items:center;gap:8px">
+      <i class="fas fa-chart-line" style="color:#4f46e5"></i>30-Day Expense Forecast
+    </h3>
+    <span style="font-size:0.72rem;padding:3px 8px;background:#eff6ff;color:#3b82f6;border-radius:9999px;font-weight:600">Machine Learning</span>
+  </div>
+  <canvas id="forecastChart" height="140"></canvas>
+</div>
+
+<!-- Budget Health -->
+{% if budgets %}
+<div class="card" style="margin-bottom:1.25rem">
+  <h3 style="font-size:0.875rem;font-weight:700;color:#1e293b;margin:0 0 1rem;display:flex;align-items:center;gap:8px">
+    <i class="fas fa-shield-alt" style="color:#4f46e5"></i>Budget Health
+  </h3>
+  <div style="display:grid;gap:0.75rem">
+    {% for b in budgets %}
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:0.875rem;font-weight:600;color:#1e293b">{{ b.name }}</span>
+        <div style="text-align:right">
+          <span style="font-size:0.875rem;font-weight:700;color:{% if b.get_percentage_used >= 90 %}#ef4444{% elif b.get_percentage_used >= 70 %}#f59e0b{% else %}#22c55e{% endif %}">{{ b.get_percentage_used|floatformat:0 }}%</span>
+          <span style="font-size:0.75rem;color:#94a3b8;margin-left:6px">{{ user.profile.get_currency_symbol }}{{ b.get_spent|floatformat:0 }} / {{ user.profile.get_currency_symbol }}{{ b.limit|floatformat:0 }}</span>
+        </div>
+      </div>
+      <div style="background:#f1f5f9;border-radius:9999px;height:8px;overflow:hidden">
+        <div style="background:{% if b.get_percentage_used >= 90 %}#ef4444{% elif b.get_percentage_used >= 70 %}#f59e0b{% else %}linear-gradient(90deg,#4f46e5,#7c3aed){% endif %};height:100%;border-radius:9999px;width:{{ b.get_percentage_used|floatformat:0 }}%;max-width:100%;transition:width 0.5s"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Top Spending Categories -->
+{% if top_categories %}
+<div class="card">
+  <h3 style="font-size:0.875rem;font-weight:700;color:#1e293b;margin:0 0 1rem">Top Spending Categories (This Month)</h3>
+  <div style="display:grid;gap:0.5rem">
+    {% for item in top_categories %}
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <div style="width:36px;height:36px;border-radius:10px;background:{{ item.category__color }}22;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">{{ item.category__icon }}</div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:0.875rem;font-weight:600;color:#1e293b">{{ item.category__name }}</span>
+          <span style="font-size:0.875rem;font-weight:700;color:#374151">{{ user.profile.get_currency_symbol }}{{ item.total|floatformat:0 }}</span>
+        </div>
+        <div style="background:#f1f5f9;border-radius:9999px;height:5px;overflow:hidden">
+          <div style="background:{{ item.category__color }};height:100%;border-radius:9999px;width:{{ item.pct|default:'30' }}%"></div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+var catData = {{ cat_spending_json|safe }};
+var trendData = {{ trend_json|safe }};
+var forecastData = {{ forecast_json|safe }};
+
+if (catData && catData.labels) {
+  new Chart(document.getElementById('catChart'), {
+    type: 'doughnut',
+    data: {labels:catData.labels, datasets:[{data:catData.values, backgroundColor:['#4f46e5','#7c3aed','#ec4899','#f59e0b','#22c55e','#06b6d4','#ef4444','#84cc16']}]},
+    options: {plugins:{legend:{position:'bottom',labels:{boxWidth:12,padding:12,font:{size:11}}}}, maintainAspectRatio:false}
+  });
+}
+
+if (trendData && trendData.labels) {
+  new Chart(document.getElementById('trendChart'), {
+    type: 'bar',
+    data: {labels:trendData.labels, datasets:[{label:'Income',data:trendData.income,backgroundColor:'rgba(34,197,94,0.7)',borderRadius:4},{label:'Expense',data:trendData.expense,backgroundColor:'rgba(239,68,68,0.7)',borderRadius:4}]},
+    options: {plugins:{legend:{labels:{boxWidth:12,font:{size:11}}}}, scales:{y:{beginAtZero:true,grid:{color:'#f1f5f9'}}, x:{grid:{display:false}}}, maintainAspectRatio:false}
+  });
+}
+
+if (forecastData && forecastData.dates) {
+  new Chart(document.getElementById('forecastChart'), {
+    type: 'line',
+    data: {labels:forecastData.dates, datasets:[{label:'Predicted Expense',data:forecastData.values,borderColor:'#4f46e5',backgroundColor:'rgba(79,70,229,0.1)',fill:true,tension:0.4,pointRadius:3}]},
+    options: {plugins:{legend:{labels:{boxWidth:12,font:{size:11}}}}, scales:{y:{beginAtZero:true,grid:{color:'#f1f5f9'}}, x:{grid:{display:false}, ticks:{maxTicksLimit:10}}}, maintainAspectRatio:false}
+  });
+}
+</script>
+{% endblock %}

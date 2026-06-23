@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Groups{% endblock %}
+{% block page_title %}Expense Groups{% endblock %}
+{% block page_subtitle %}Split bills and track shared expenses with friends and family{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:flex-end;margin-bottom:1rem">
+  <a href="{% url 'create_group' %}" class="btn-primary">
+    <i class="fas fa-plus" style="margin-right:6px"></i>Create Group
+  </a>
+</div>
+
+{% if groups %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem">
+  {% for g in groups %}
+  <a href="{% url 'group_detail' g.pk %}" style="text-decoration:none">
+    <div class="card" style="cursor:pointer;transition:box-shadow 0.15s;border:1px solid transparent" onmouseover="this.style.boxShadow='0 4px 20px rgba(79,70,229,0.15)';this.style.borderColor='#c7d2fe'" onmouseout="this.style.boxShadow='';this.style.borderColor='transparent'">
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.875rem">
+        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="fas fa-users" style="color:#fff;font-size:1rem"></i>
+        </div>
+        <div>
+          <h3 style="font-size:0.9rem;font-weight:700;color:#1e293b;margin:0">{{ g.name }}</h3>
+          <p style="font-size:0.75rem;color:#94a3b8;margin:0">{{ g.members.count }} member{{ g.members.count|pluralize }}</p>
+        </div>
+      </div>
+      {% if g.description %}
+      <p style="font-size:0.8rem;color:#64748b;margin:0 0 0.75rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">{{ g.description }}</p>
+      {% endif %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-top:0.75rem;border-top:1px solid #f1f5f9">
+        <span style="font-size:0.75rem;color:#94a3b8">Created {{ g.created_at|timesince }} ago</span>
+        <span style="font-size:0.75rem;font-weight:600;color:#4f46e5">{{ g.expenses.count }} expense{{ g.expenses.count|pluralize }}</span>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:4rem 1rem">
+  <i class="fas fa-users" style="font-size:3.5rem;color:#e2e8f0;display:block;margin-bottom:1rem"></i>
+  <h3 style="font-size:1rem;font-weight:700;color:#1e293b;margin:0 0 0.5rem">No groups yet</h3>
+  <p style="font-size:0.875rem;color:#94a3b8;margin:0 0 1.5rem">Create a group to split expenses with friends and family</p>
+  <a href="{% url 'create_group' %}" class="btn-primary">
+    <i class="fas fa-plus" style="margin-right:6px"></i>Create First Group
+  </a>
+</div>
+{% endif %}
+{% endblock %}

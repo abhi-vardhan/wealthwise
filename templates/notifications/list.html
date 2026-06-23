@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Notifications{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+{% block page_subtitle %}Stay updated on your financial activity{% endblock %}
+
+{% block content %}
+<div style="max-width:700px">
+  {% if notifications %}
+  <div style="display:flex;justify-content:flex-end;margin-bottom:1rem">
+    <form method="post" action="{% url 'mark_all_read' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-secondary" style="font-size:0.8rem">
+        <i class="fas fa-check-double" style="margin-right:6px"></i>Mark all as read
+      </button>
+    </form>
+  </div>
+
+  <div style="display:grid;gap:0.625rem">
+    {% for notif in notifications %}
+    <div style="display:flex;align-items:flex-start;gap:0.875rem;padding:0.875rem 1rem;background:{% if not notif.is_read %}#f8f9ff{% else %}#fff{% endif %};border-radius:0.875rem;border:1px solid {% if not notif.is_read %}#c7d2fe{% else %}#f1f5f9{% endif %};transition:all 0.15s">
+      <div style="width:38px;height:38px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:{% if notif.notification_type == 'budget_alert' %}#fef2f2{% elif notif.notification_type == 'bill_reminder' %}#fffbeb{% elif notif.notification_type == 'achievement' %}#f0fdf4{% else %}#eef2ff{% endif %}">
+        <i class="fas {% if notif.notification_type == 'budget_alert' %}fa-exclamation-triangle" style="color:#ef4444{% elif notif.notification_type == 'bill_reminder' %}fa-bell" style="color:#f59e0b{% elif notif.notification_type == 'achievement' %}fa-trophy" style="color:#22c55e{% else %}fa-info-circle" style="color:#4f46e5{% endif %};font-size:0.875rem"></i>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem">
+          <p style="font-size:0.875rem;font-weight:{% if not notif.is_read %}700{% else %}500{% endif %};color:#1e293b;margin:0 0 3px">{{ notif.title }}</p>
+          <span style="font-size:0.7rem;color:#94a3b8;white-space:nowrap;flex-shrink:0">{{ notif.created_at|timesince }} ago</span>
+        </div>
+        <p style="font-size:0.8rem;color:#64748b;margin:0">{{ notif.message }}</p>
+      </div>
+      {% if not notif.is_read %}
+      <div style="width:8px;height:8px;border-radius:50%;background:#4f46e5;flex-shrink:0;margin-top:6px"></div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;padding:4rem 1rem">
+    <i class="fas fa-bell" style="font-size:3.5rem;color:#e2e8f0;display:block;margin-bottom:1rem"></i>
+    <h3 style="font-size:1rem;font-weight:700;color:#1e293b;margin:0 0 0.5rem">All caught up!</h3>
+    <p style="font-size:0.875rem;color:#94a3b8;margin:0">No notifications at the moment. Keep logging your expenses!</p>
+  </div>
+  {% endif %}
+
+  <!-- Bill Reminders Section -->
+  {% if upcoming_bills %}
+  <div class="card" style="margin-top:1.5rem;border-left:4px solid #f59e0b">
+    <h3 style="font-size:0.875rem;font-weight:700;color:#1e293b;margin:0 0 1rem;display:flex;align-items:center;gap:8px">
+      <i class="fas fa-calendar-alt" style="color:#f59e0b"></i>Upcoming Bills
+    </h3>
+    <div style="display:grid;gap:0.5rem">
+      {% for bill in upcoming_bills %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0.625rem 0;border-bottom:1px solid #fef3c7">
+        <div>
+          <p style="font-size:0.875rem;font-weight:600;color:#1e293b;margin:0">{{ bill.description }}</p>
+          <p style="font-size:0.75rem;color:#92400e;margin:0">Due {{ bill.next_due_date|date:"d M Y" }}</p>
+        </div>
+        <span style="font-size:0.9rem;font-weight:700;color:#d97706">{{ user.profile.get_currency_symbol }}{{ bill.amount|floatformat:2 }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

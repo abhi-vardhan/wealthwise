@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Receipts{% endblock %}
+{% block page_title %}Receipt Scanner{% endblock %}
+{% block page_subtitle %}Upload receipts and let AI extract expense data automatically{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+
+  <!-- Upload Area -->
+  <div>
+    <div class="card" style="margin-bottom:1rem">
+      <h3 style="font-size:0.875rem;font-weight:700;color:#1e293b;margin:0 0 1.25rem;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-upload" style="color:#4f46e5"></i>Upload Receipt
+      </h3>
+      <form method="post" enctype="multipart/form-data" id="uploadForm">
+        {% csrf_token %}
+        <div id="dropZone" style="border:2px dashed #c7d2fe;border-radius:1rem;padding:2.5rem;text-align:center;cursor:pointer;transition:all 0.2s;background:#f8f9ff" ondragover="event.preventDefault();this.style.borderColor='#4f46e5';this.style.background='#eef2ff'" ondragleave="this.style.borderColor='#c7d2fe';this.style.background='#f8f9ff'" ondrop="handleDrop(event)">
+          <i class="fas fa-receipt" style="font-size:2.5rem;color:#c7d2fe;display:block;margin-bottom:0.75rem" id="dropIcon"></i>
+          <p style="font-size:0.9rem;font-weight:600;color:#4f46e5;margin:0 0 4px">Drop image here or click to browse</p>
+          <p style="font-size:0.75rem;color:#94a3b8;margin:0">Supports JPG, PNG, PDF — Max 10MB</p>
+          <input type="file" name="image" id="fileInput" accept="image/*,.pdf" style="display:none" onchange="previewFile(this)">
+        </div>
+        <div id="previewDiv" style="display:none;margin-top:1rem;text-align:center">
+          <img id="previewImg" style="max-width:100%;max-height:200px;border-radius:0.75rem;border:1px solid #e2e8f0">
+        </div>
+        <div style="margin-top:1rem">
+          <label style="display:block;font-size:0.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Notes (optional)</label>
+          {{ form.notes }}
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%;text-align:center;margin-top:1rem">
+          <i class="fas fa-magic" style="margin-right:6px"></i>Extract with OCR + AI
+        </button>
+      </form>
+    </div>
+
+    <!-- OCR features info -->
+    <div class="card" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0">
+      <h4 style="font-size:0.8rem;font-weight:700;color:#166534;margin:0 0 0.75rem;display:flex;align-items:center;gap:6px">
+        <i class="fas fa-robot"></i>AI Receipt Processing
+      </h4>
+      <ul style="margin:0;padding-left:1.25rem;color:#166534;font-size:0.78rem;line-height:1.9">
+        <li>Extracts merchant name, date, and total amount</li>
+        <li>Auto-categorizes using AI keyword matching</li>
+        <li>Supports English receipts with Tesseract OCR</li>
+        <li>Review and confirm before saving</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Receipt History -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <h3 style="font-size:0.875rem;font-weight:700;color:#1e293b;margin:0">Recent Receipts</h3>
+      <span style="font-size:0.72rem;color:#94a3b8">{{ receipts.count }} total</span>
+    </div>
+    {% if receipts %}
+    <div style="display:grid;gap:0.75rem;max-height:500px;overflow-y:auto">
+      {% for r in receipts %}
+      <div style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;background:#f8fafc;border-radius:0.75rem;border:1px solid #f1f5f9">
+        <div style="width:48px;height:48px;border-radius:10px;overflow:hidden;flex-shrink:0;background:#e2e8f0;display:flex;align-items:center;justify-content:center">
+          {% if r.image %}<img src="{{ r.image.url }}" style="width:100%;height:100%;object-fit:cover">{% else %}<i class="fas fa-receipt" style="color:#94a3b8"></i>{% endif %}
+        </div>
+        <div style="flex:1;min-width:0">
+          <p style="font-size:0.875rem;font-weight:600;color:#1e293b;margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.merchant_name|default:"Unknown Merchant" }}</p>
+          <p style="font-size:0.75rem;color:#64748b;margin:0">{{ r.receipt_date|date:"d M Y"|default:r.uploaded_at|date:"d M Y" }}</p>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          {% if r.total_amount %}
+          <p style="font-size:0.9rem;font-weight:700;color:#1e293b;margin:0">{{ user.profile.get_currency_symbol }}{{ r.total_amount|floatformat:2 }}</p>
+          {% endif %}
+          <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:4px">
+            {% if not r.is_processed %}
+            <a href="{% url 'review_receipt' r.pk %}" style="font-size:0.72rem;padding:2px 8px;background:#eff6ff;color:#3b82f6;border-radius:9999px;text-decoration:none;font-weight:600">Review</a>
+            {% else %}
+            <span style="font-size:0.72rem;padding:2px 8px;background:#f0fdf4;color:#16a34a;border-radius:9999px;font-weight:600">Saved</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:3rem 1rem;color:#94a3b8">
+      <i class="fas fa-receipt" style="font-size:2.5rem;color:#e2e8f0;display:block;margin-bottom:0.75rem"></i>
+      <p style="font-size:0.875rem">No receipts uploaded yet</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+document.getElementById('dropZone').addEventListener('click', function() {
+  document.getElementById('fileInput').click();
+});
+function previewFile(input) {
+  if (input.files && input.files[0]) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('previewImg').src = e.target.result;
+      document.getElementById('previewDiv').style.display = 'block';
+      document.getElementById('dropIcon').style.color = '#4f46e5';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').style.borderColor = '#c7d2fe';
+  document.getElementById('dropZone').style.background = '#f8f9ff';
+  var files = e.dataTransfer.files;
+  if (files.length) {
+    document.getElementById('fileInput').files = files;
+    previewFile(document.getElementById('fileInput'));
+  }
+}
+</script>
+{% endblock %}

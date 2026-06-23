@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ group.name }}{% endblock %}
+{% block page_title %}{{ group.name }}{% endblock %}
+{% block page_subtitle %}Shared expenses and balances{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem">
+
+  <!-- Left: Expenses -->
+  <div>
+    <!-- Add Expense -->
+    <div class="card" style="margin-bottom:1rem">
+      <h3 style="font-size:0.875rem;font-weight:700;color:#1e293b;margin:0 0 1rem;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-plus-circle" style="color:#4f46e5"></i>Add Shared Expense
+      </h3>
+      <form method="post" action="{% url 'add_group_expense' group.pk %}">
+        {% csrf_token %}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+          {% for field in expense_form %}
+          <div style="{% if field.name == 'description' or field.name == 'split_equally' %}grid-column:1/-1;{% endif %}">
+            <label style="display:block;font-size:0.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<p style="color:#dc2626;font-size:0.72rem;margin:3px 0 0">{{ field.errors.0 }}</p>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <button type="submit" class="btn-primary" style="margin-top:0.75rem">
+          <i class="fas fa-plus" style="margin-right:6px"></i>Add Expense
+        </button>
+      </form>
+    </div>
+
+    <!-- Expense List -->
+    <div class="card">
+      <h3 style="font-size:0.875rem;font-weight:700;color:#1e293b;margin:0 0 1rem">Expenses</h3>
+      {% if expenses %}
+      <div style="display:grid;gap:0.5rem">
+        {% for exp in expenses %}
+        <div style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;background:#f8fafc;border-radius:0.75rem">
+          <div style="width:36px;height:36px;border-radius:10px;background:#eef2ff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="fas fa-receipt" style="color:#4f46e5;font-size:0.8rem"></i>
+          </div>
+          <div style="flex:1">
+            <p style="font-size:0.875rem;font-weight:600;color:#1e293b;margin:0">{{ exp.description }}</p>
+            <p style="font-size:0.75rem;color:#94a3b8;margin:0">Paid by {{ exp.paid_by.get_full_name|default:exp.paid_by.username }} · {{ exp.date|date:"d M Y" }}</p>
+          </div>
+          <div style="text-align:right">
+            <p style="font-size:0.9rem;font-weight:700;color:#1e293b;margin:0">{{ user.profile.get_currency_symbol }}{{ exp.amount|floatformat:2|intcomma }}</p>
+            {% if exp.split_equally %}<span style="font-size:0.7rem;color:#64748b">Split equally</span>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:2rem;color:#94a3b8">
+        <i class="fas fa-receipt" style="font-size:2rem;display:block;margin-bottom:0.5rem;color:#e2e8f0"></i>
+        <p style="font-size:0.875rem">No expenses yet</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Right: Members & Balances -->
+  <div>
+    <div class="card" style="margin-bottom:1rem">
+      <h3 style="font-size:0.875rem;font-weight:700;color:#1e293b;margin:0 0 1rem">Members</h3>
+      <div style="display:grid;gap:0.5rem">
+        {% for member in group.members.all %}
+        <div style="display:flex;align-items:center;gap:0.625rem">
+          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <span style="font-size:0.7rem;font-weight:700;color:#fff">{{ member.first_name|first|upper }}{{ member.last_name|first|upper }}</span>
+          </div>
+          <div>
+            <p style="font-size:0.8rem;font-weight:600;color:#1e293b;margin:0">{{ member.get_full_name|default:member.username }}</p>
+            <p style="font-size:0.7rem;color:#94a3b8;margin:0">{{ member.email }}</p>
+          </div>
+          {% if member == group.created_by %}
+          <span style="margin-left:auto;font-size:0.65rem;padding:2px 6px;background:#eef2ff;color:#4f46e5;border-radius:9999px;font-weight:600">Admin</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Balances -->
+    {% if balances %}
+    <div class="card">
+      <h3 style="font-size:0.875rem;font-weight:700;color:#1e293b;margin:0 0 1rem">Balances</h3>
+      <div style="display:grid;gap:0.5rem">
+        {% for member, bal in balances.items %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid #f8fafc">
+          <span style="font-size:0.8rem;color:#374151">{{ member }}</span>
+          <span style="font-size:0.875rem;font-weight:700;color:{% if bal >= 0 %}#059669{% else %}#dc2626{% endif %}">
+            {% if bal >= 0 %}+{% endif %}{{ user.profile.get_currency_symbol }}{{ bal|floatformat:2 }}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Welcome back, {{ user.first_name|default:user.username }}! Here's your financial overview.{% endblock %}
+
+{% block content %}
+
+<!-- Summary Cards -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;margin-bottom:2rem">
+
+  <div class="card" style="position:relative;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+      <span style="font-size:0.8rem;font-weight:600;color:#64748b">Total Balance</span>
+      <div style="width:40px;height:40px;background:#ede9fe;border-radius:10px;display:flex;align-items:center;justify-content:center">
+        <i class="fas fa-landmark" style="color:#7c3aed"></i>
+      </div>
+    </div>
+    <p style="font-size:1.6rem;font-weight:800;color:{% if total_balance >= 0 %}#059669{% else %}#dc2626{% endif %};margin:0">
+      {{ user.profile.get_currency_symbol }}{{ total_balance|floatformat:2|intcomma }}
+    </p>
+    <p style="font-size:0.72rem;color:#94a3b8;margin:4px 0 0">All time net balance</p>
+    <div style="position:absolute;bottom:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:{% if total_balance >= 0 %}#d1fae5{% else %}#fee2e2{% endif %};opacity:0.4"></div>
+  </div>
+
+  <div class="card" style="position:relative;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+      <span style="font-size:0.8rem;font-weight:600;color:#64748b">This Month Income</span>
+      <div style="width:40px;height:40px;background:#d1fae5;border-radius:10px;display:flex;align-items:center;justify-content:center">
+        <i class="fas fa-arrow-down" style="color:#059669"></i>
+      </div>
+    </div>
+    <p style="font-size:1.6rem;font-weight:800;color:#059669;margin:0">
+      {{ user.profile.get_currency_symbol }}{{ monthly_income|floatformat:2|intcomma }}
+    </p>
+    <p style="font-size:0.72rem;color:#94a3b8;margin:4px 0 0">{{ today|date:"F Y" }}</p>
+    <div style="position:absolute;bottom:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:#d1fae5;opacity:0.4"></div>
+  </div>
+
+  <div class="card" style="position:relative;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+      <span style="font-size:0.8rem;font-weight:600;color:#64748b">This Month Expense</span>
+      <div style="width:40px;height:40px;background:#fee2e2;border-radius:10px;display:flex;align-items:center;justify-content:center">
+        <i class="fas fa-arrow-up" style="color:#dc2626"></i>
+      </div>
+    </div>
+    <p style="font-size:1.6rem;font-weight:800;color:#dc2626;margin:0">
+      {{ user.profile.get_currency_symbol }}{{ monthly_expense|floatformat:2|intcomma }}
+    </p>
+    <p style="font-size:0.72rem;color:#94a3b8;margin:4px 0 0">{{ today|date:"F Y" }}</p>
+    <div style="position:absolute;bottom:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:#fee2e2;opacity:0.4"></div>
+  </div>
+
+  <div class="card" style="position:relative;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+      <span style="font-size:0.8rem;font-weight:600;color:#64748b">Net Savings</span>
+      <div style="width:40px;height:40px;background:#fef3c7;border-radius:10px;display:flex;align-items:center;justify-content:center">
+        <i class="fas fa-piggy-bank" style="color:#d97706"></i>
+      </div>
+    </div>
+    <p style="font-size:1.6rem;font-weight:800;color:{% if net_savings >= 0 %}#059669{% else %}#dc2626{% endif %};margin:0">
+      {{ user.profile.get_currency_symbol }}{{ net_savings|floatformat:2|intcomma }}
+    </p>
+    <p style="font-size:0.72rem;color:#94a3b8;margin:4px 0 0">This month</p>
+    <div style="position:absolute;bottom:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:#fef3c7;opacity:0.4"></div>
+  </div>
+
+</div>
+
+<!-- Charts Row -->
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:1.5rem">
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <h2 style="font-size:0.95rem;font-weight:700;color:#0f172a;margin:0">Monthly Income vs Expenses</h2>
+      <span style="font-size:0.72rem;color:#94a3b8;background:#f8fafc;padding:3px 8px;border-radius:6px;border:1px solid #e2e8f0">Last 6 months</span>
+    </div>
+    <canvas id="trendChart" height="120"></canvas>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <h2 style="font-size:0.95rem;font-weight:700;color:#0f172a;margin:0">Spending by Category</h2>
+      <span style="font-size:0.72rem;color:#94a3b8;background:#f8fafc;padding:3px 8px;border-radius:6px;border:1px solid #e2e8f0">This month</span>
+    </div>
+    <canvas id="categoryChart" height="170"></canvas>
+    <div id="category-legend" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:5px"></div>
+  </div>
+
+</div>
+
+<!-- Bottom Row -->
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem">
+
+  <!-- Recent Transactions -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <h2 style="font-size:0.95rem;font-weight:700;color:#0f172a;margin:0">Recent Transactions</h2>
+      <a href="{% url 'transaction_list' %}" style="font-size:0.8rem;color:#4f46e5;text-decoration:none;font-weight:600">View all →</a>
+    </div>
+    {% if recent_transactions %}
+    <div style="display:flex;flex-direction:column;gap:0.5rem">
+      {% for t in recent_transactions %}
+      <div style="display:flex;align-items:center;gap:0.75rem;padding:0.625rem 0.75rem;border-radius:0.75rem;transition:background 0.15s" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+        <div style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;background:{{ t.category.color|default:'#e0e7ff' }}22">
+          {{ t.category.icon|default:"💰" }}
+        </div>
+        <div style="flex:1;min-width:0">
+          <p style="font-size:0.85rem;font-weight:600;color:#1e293b;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.description }}</p>
+          <p style="font-size:0.72rem;color:#94a3b8;margin:2px 0 0">{{ t.date|date:"d M Y" }} · {{ t.payment_method|title }}</p>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <p style="font-size:0.9rem;font-weight:700;color:{% if t.transaction_type == 'income' %}#059669{% else %}#dc2626{% endif %};margin:0">
+            {% if t.transaction_type == 'income' %}+{% else %}-{% endif %}{{ user.profile.get_currency_symbol }}{{ t.amount|floatformat:2|intcomma }}
+          </p>
+          <span class="badge-{{ t.transaction_type }}">{{ t.transaction_type|title }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:3rem 1rem">
+      <i class="fas fa-receipt" style="font-size:3rem;color:#e2e8f0;display:block;margin-bottom:0.75rem"></i>
+      <p style="color:#94a3b8;font-size:0.875rem;margin:0 0 1rem">No transactions yet.</p>
+      <a href="{% url 'add_transaction' %}" class="btn-primary">Add First Transaction</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right column -->
+  <div style="display:flex;flex-direction:column;gap:1.25rem">
+
+    <!-- AI Recommendations -->
+    {% if recommendations %}
+    <div class="card">
+      <h2 style="font-size:0.95rem;font-weight:700;color:#0f172a;margin:0 0 1rem">
+        <i class="fas fa-brain" style="color:#4f46e5;margin-right:6px"></i>AI Insights
+      </h2>
+      <div style="display:flex;flex-direction:column;gap:0.5rem">
+        {% for rec in recommendations %}
+        <div style="padding:0.625rem 0.75rem;border-radius:0.625rem;font-size:0.8rem;
+          {% if rec.type == 'danger' %}background:#fef2f2;border-left:3px solid #ef4444
+          {% elif rec.type == 'warning' %}background:#fffbeb;border-left:3px solid #f59e0b
+          {% elif rec.type == 'success' %}background:#f0fdf4;border-left:3px solid #22c55e
+          {% else %}background:#eff6ff;border-left:3px solid #3b82f6{% endif %}">
+          <p style="font-weight:700;color:#1e293b;margin:0 0 2px;font-size:0.78rem">{{ rec.title }}</p>
+          <p style="color:#475569;margin:0;line-height:1.4">{{ rec.description }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      <a href="{% url 'analytics_detail' %}" style="font-size:0.75rem;color:#4f46e5;text-decoration:none;font-weight:600;display:block;margin-top:0.75rem">View full analytics →</a>
+    </div>
+    {% endif %}
+
+    <!-- Active Budgets -->
+    {% if active_budgets %}
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h2 style="font-size:0.95rem;font-weight:700;color:#0f172a;margin:0">Active Budgets</h2>
+        <a href="{% url 'budget_list' %}" style="font-size:0.75rem;color:#4f46e5;text-decoration:none;font-weight:600">All →</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.75rem">
+        {% for budget in active_budgets %}
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:4px">
+            <span style="font-weight:600;color:#374151">{{ budget.name }}</span>
+            <span style="font-weight:700;color:{% if budget.get_percentage_used >= 90 %}#dc2626{% elif budget.get_percentage_used >= 70 %}#d97706{% else %}#4f46e5{% endif %}">{{ budget.get_percentage_used }}%</span>
+          </div>
+          <div style="height:6px;background:#f1f5f9;border-radius:9999px;overflow:hidden">
+            <div class="progress-bar" style="height:100%;border-radius:9999px;background:{% if budget.get_percentage_used >= 90 %}#ef4444{% elif budget.get_percentage_used >= 70 %}#f59e0b{% else %}#4f46e5{% endif %};width:{{ budget.get_percentage_used }}%"></div>
+          </div>
+          <p style="font-size:0.7rem;color:#94a3b8;margin:3px 0 0">{{ user.profile.get_currency_symbol }}{{ budget.get_spent|floatformat:0|intcomma }} of {{ user.profile.get_currency_symbol }}{{ budget.total_amount|floatformat:0|intcomma }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Upcoming Bills -->
+    {% if upcoming_bills %}
+    <div class="card">
+      <h2 style="font-size:0.95rem;font-weight:700;color:#0f172a;margin:0 0 1rem">
+        <i class="fas fa-calendar-alt" style="color:#f59e0b;margin-right:6px"></i>Upcoming Bills
+      </h2>
+      <div style="display:flex;flex-direction:column;gap:0.5rem">
+        {% for bill in upcoming_bills %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0.625rem;background:#fffbeb;border-radius:0.5rem">
+          <div>
+            <p style="font-size:0.8rem;font-weight:600;color:#1e293b;margin:0">{{ bill.title }}</p>
+            <p style="font-size:0.7rem;color:#94a3b8;margin:2px 0 0">Due {{ bill.due_date|date:"d M" }}</p>
+          </div>
+          {% if bill.amount %}<span style="font-size:0.85rem;font-weight:700;color:#d97706">{{ user.profile.get_currency_symbol }}{{ bill.amount|floatformat:0|intcomma }}</span>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- 7-Day Forecast -->
+    <div class="card">
+      <h2 style="font-size:0.95rem;font-weight:700;color:#0f172a;margin:0 0 1rem">
+        <i class="fas fa-chart-line" style="color:#4f46e5;margin-right:6px"></i>7-Day Forecast
+      </h2>
+      <canvas id="forecastChart" height="130"></canvas>
+      <p style="font-size:0.7rem;color:#94a3b8;margin-top:0.5rem;text-align:center">Predicted daily expenses (next 7 days)</p>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var trend = {{ trend_json|safe }};
+var catData = {{ cat_spending_json|safe }};
+var forecast = {{ forecast_json|safe }};
+
+// Monthly Trend Chart
+new Chart(document.getElementById('trendChart'), {
+  type: 'bar',
+  data: {
+    labels: trend.labels,
+    datasets: [
+      { label: 'Income', data: trend.incomes, backgroundColor: 'rgba(5,150,105,0.75)', borderRadius: 6, borderSkipped: false },
+      { label: 'Expenses', data: trend.expenses, backgroundColor: 'rgba(220,38,38,0.75)', borderRadius: 6, borderSkipped: false }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// Category Doughnut
+if (catData.length > 0) {
+  new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+      labels: catData.map(function(c){ return c.name; }),
+      datasets: [{ data: catData.map(function(c){ return c.amount; }), backgroundColor: catData.map(function(c){ return c.color; }), borderWidth: 2, borderColor: '#fff' }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, cutout: '68%' }
+  });
+  var legend = document.getElementById('category-legend');
+  catData.slice(0,5).forEach(function(c) {
+    legend.innerHTML += '<div style="display:flex;justify-content:space-between;font-size:0.72rem"><div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:' + c.color + ';display:inline-block"></span><span style="color:#64748b">' + c.name + '</span></div><span style="font-weight:600;color:#1e293b">₹' + Number(c.amount).toLocaleString('en-IN') + '</span></div>';
+  });
+} else {
+  document.getElementById('categoryChart').parentElement.innerHTML += '<p style="text-align:center;color:#94a3b8;font-size:0.8rem;padding:2rem 0">No expenses this month</p>';
+}
+
+// Forecast
+new Chart(document.getElementById('forecastChart'), {
+  type: 'line',
+  data: {
+    labels: forecast.dates.map(function(d){ return new Date(d).toLocaleDateString('en-IN', {day:'numeric',month:'short'}); }),
+    datasets: [{ label: 'Predicted', data: forecast.predicted, borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,0.08)', fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#4f46e5' }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+      x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+</script>
+{% endblock %}

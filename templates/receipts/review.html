@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Review Receipt{% endblock %}
+{% block page_title %}Review Receipt{% endblock %}
+{% block page_subtitle %}Verify extracted data before saving{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:900px">
+  <!-- Receipt Image -->
+  <div class="card">
+    <h3 style="font-size:0.875rem;font-weight:700;color:#1e293b;margin:0 0 1rem">Scanned Receipt</h3>
+    {% if receipt.image %}
+    <img src="{{ receipt.image.url }}" alt="Receipt" style="width:100%;border-radius:0.75rem;border:1px solid #e2e8f0">
+    {% else %}
+    <div style="background:#f1f5f9;border-radius:0.75rem;height:300px;display:flex;align-items:center;justify-content:center">
+      <i class="fas fa-image" style="color:#cbd5e1;font-size:3rem"></i>
+    </div>
+    {% endif %}
+
+    {% if receipt.raw_text %}
+    <div style="margin-top:1rem">
+      <p style="font-size:0.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 6px">OCR Extracted Text</p>
+      <pre style="font-size:0.72rem;color:#374151;background:#f8fafc;border:1px solid #e2e8f0;border-radius:0.625rem;padding:0.75rem;max-height:200px;overflow-y:auto;white-space:pre-wrap;font-family:monospace">{{ receipt.raw_text }}</pre>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Review Form -->
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:1.25rem">
+      <div style="width:32px;height:32px;background:#eff6ff;border-radius:8px;display:flex;align-items:center;justify-content:center">
+        <i class="fas fa-robot" style="color:#3b82f6;font-size:0.875rem"></i>
+      </div>
+      <div>
+        <h3 style="font-size:0.875rem;font-weight:700;color:#1e293b;margin:0">AI Extracted Data</h3>
+        <p style="font-size:0.72rem;color:#94a3b8;margin:0">Review and correct if needed</p>
+      </div>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <div style="display:grid;gap:1rem">
+        {% for field in form %}
+        <div>
+          <label style="display:block;font-size:0.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<p style="color:#dc2626;font-size:0.72rem;margin:3px 0 0">{{ field.errors.0 }}</p>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+
+      <div style="display:flex;gap:0.75rem;margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid #f1f5f9">
+        <button type="submit" class="btn-primary" style="flex:1;text-align:center">
+          <i class="fas fa-check" style="margin-right:6px"></i>Save Transaction
+        </button>
+        <a href="{% url 'upload_receipt' %}" class="btn-secondary" style="flex:1;text-align:center">Discard</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

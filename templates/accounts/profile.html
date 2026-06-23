@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Profile Settings{% endblock %}
+{% block page_title %}Profile Settings{% endblock %}
+{% block page_subtitle %}Manage your account preferences{% endblock %}
+
+{% block content %}
+<div style="max-width:700px;display:grid;grid-template-columns:1fr 2fr;gap:1.5rem;align-items:start">
+  <!-- Avatar Card -->
+  <div class="card" style="text-align:center">
+    <div style="width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;box-shadow:0 8px 20px rgba(79,70,229,0.3)">
+      {% if user.profile.avatar %}
+      <img src="{{ user.profile.avatar.url }}" alt="Avatar" style="width:96px;height:96px;border-radius:50%;object-fit:cover">
+      {% else %}
+      <span style="font-size:2rem;font-weight:800;color:#fff">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
+      {% endif %}
+    </div>
+    <h3 style="font-size:1rem;font-weight:700;color:#1e293b;margin:0 0 4px">{{ user.get_full_name|default:user.username }}</h3>
+    <p style="font-size:0.8rem;color:#64748b;margin:0 0 1rem">{{ user.email }}</p>
+    <div style="font-size:0.75rem;color:#94a3b8">
+      <p style="margin:2px 0">Member since {{ user.date_joined|date:"M Y" }}</p>
+      <p style="margin:2px 0">Currency: {{ user.profile.currency }}</p>
+    </div>
+  </div>
+
+  <!-- Profile Form -->
+  <div class="card">
+    <h3 style="font-size:0.875rem;font-weight:700;color:#1e293b;margin:0 0 1.25rem">Edit Profile</h3>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        {% for field in form %}
+        <div style="{% if field.name == 'bio' or field.name == 'avatar' %}grid-column:1/-1;{% endif %}">
+          <label style="display:block;font-size:0.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<p style="color:#dc2626;font-size:0.72rem;margin:3px 0 0">{{ field.errors.0 }}</p>{% endif %}
+          {% if field.help_text %}<p style="color:#94a3b8;font-size:0.7rem;margin:3px 0 0">{{ field.help_text }}</p>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid #f1f5f9">
+        <button type="submit" class="btn-primary">
+          <i class="fas fa-save" style="margin-right:6px"></i>Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Savings Goals -->
+{% if user.profile.monthly_savings_goal %}
+<div class="card" style="max-width:700px;margin-top:1rem">
+  <h3 style="font-size:0.875rem;font-weight:700;color:#1e293b;margin:0 0 1rem">Savings Goal Progress</h3>
+  <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+    <span style="font-size:0.8rem;color:#64748b">Monthly Goal</span>
+    <span style="font-size:0.8rem;font-weight:700;color:#1e293b">{{ user.profile.get_currency_symbol }}{{ user.profile.monthly_savings_goal|floatformat:0 }}</span>
+  </div>
+  <div style="background:#f1f5f9;border-radius:9999px;height:8px;overflow:hidden">
+    <div style="background:linear-gradient(90deg,#4f46e5,#7c3aed);height:100%;border-radius:9999px;width:60%"></div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block title %}{% if edit %}Edit{% else %}Add{% endif %} Transaction{% endblock %}
+{% block page_title %}{% if edit %}Edit Transaction{% else %}Add Transaction{% endif %}{% endblock %}
+{% block page_subtitle %}{% if edit %}Update transaction details{% else %}Record a new income or expense{% endif %}{% endblock %}
+
+{% block content %}
+<div style="max-width:640px">
+  <div class="card">
+    <form method="post" enctype="multipart/form-data" id="txForm">
+      {% csrf_token %}
+
+      <!-- Type selector (inside form) -->
+      <div style="margin-bottom:1.5rem">
+        <label style="display:block;font-size:0.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem">Transaction Type</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem">
+          <label style="cursor:pointer" onclick="selectType('expense')">
+            <input type="radio" name="transaction_type" value="expense" id="type_expense" style="display:none" {% if not form.transaction_type.value or form.transaction_type.value == 'expense' %}checked{% endif %}>
+            <div id="opt_expense" style="padding:0.75rem;border:2px solid {% if not form.transaction_type.value or form.transaction_type.value == 'expense' %}#ef4444{% else %}#e2e8f0{% endif %};background:{% if not form.transaction_type.value or form.transaction_type.value == 'expense' %}#fef2f2{% else %}#fff{% endif %};border-radius:0.75rem;text-align:center;transition:all 0.15s">
+              <i class="fas fa-arrow-up" style="color:#ef4444;display:block;font-size:1.1rem;margin-bottom:4px"></i>
+              <span style="font-size:0.8rem;font-weight:600;color:#374151">Expense</span>
+            </div>
+          </label>
+          <label style="cursor:pointer" onclick="selectType('income')">
+            <input type="radio" name="transaction_type" value="income" id="type_income" style="display:none" {% if form.transaction_type.value == 'income' %}checked{% endif %}>
+            <div id="opt_income" style="padding:0.75rem;border:2px solid {% if form.transaction_type.value == 'income' %}#22c55e{% else %}#e2e8f0{% endif %};background:{% if form.transaction_type.value == 'income' %}#f0fdf4{% else %}#fff{% endif %};border-radius:0.75rem;text-align:center;transition:all 0.15s">
+              <i class="fas fa-arrow-down" style="color:#22c55e;display:block;font-size:1.1rem;margin-bottom:4px"></i>
+              <span style="font-size:0.8rem;font-weight:600;color:#374151">Income</span>
+            </div>
+          </label>
+          <label style="cursor:pointer" onclick="selectType('transfer')">
+            <input type="radio" name="transaction_type" value="transfer" id="type_transfer" style="display:none" {% if form.transaction_type.value == 'transfer' %}checked{% endif %}>
+            <div id="opt_transfer" style="padding:0.75rem;border:2px solid {% if form.transaction_type.value == 'transfer' %}#3b82f6{% else %}#e2e8f0{% endif %};background:{% if form.transaction_type.value == 'transfer' %}#eff6ff{% else %}#fff{% endif %};border-radius:0.75rem;text-align:center;transition:all 0.15s">
+              <i class="fas fa-exchange-alt" style="color:#3b82f6;display:block;font-size:1.1rem;margin-bottom:4px"></i>
+              <span style="font-size:0.8rem;font-weight:600;color:#374151">Transfer</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div>
+          <label style="display:block;font-size:0.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Amount ({{ user.profile.get_currency_symbol }})</label>
+          {{ form.amount }}
+          {% if form.amount.errors %}<p style="color:#dc2626;font-size:0.72rem;margin:3px 0 0">{{ form.amount.errors.0 }}</p>{% endif %}
+        </div>
+        <div>
+          <label style="display:block;font-size:0.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Date</label>
+          {{ form.date }}
+          {% if form.date.errors %}<p style="color:#dc2626;font-size:0.72rem;margin:3px 0 0">{{ form.date.errors.0 }}</p>{% endif %}
+        </div>
+        <div style="grid-column:1/-1">
+          <label style="display:block;font-size:0.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Description</label>
+          {{ form.description }}
+          <p style="font-size:0.7rem;color:#94a3b8;margin:3px 0 0"><i class="fas fa-robot" style="margin-right:3px"></i>AI will auto-suggest category from description</p>
+          {% if form.description.errors %}<p style="color:#dc2626;font-size:0.72rem;margin:3px 0 0">{{ form.description.errors.0 }}</p>{% endif %}
+        </div>
+        <div>
+          <label style="display:block;font-size:0.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Category</label>
+          {{ form.category }}
+        </div>
+        <div>
+          <label style="display:block;font-size:0.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Payment Method</label>
+          {{ form.payment_method }}
+        </div>
+        <div style="grid-column:1/-1">
+          <label style="display:block;font-size:0.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Notes (optional)</label>
+          {{ form.notes }}
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          {{ form.is_recurring }}
+          <label style="font-size:0.875rem;font-weight:500;color:#374151;cursor:pointer">Recurring Transaction</label>
+        </div>
+        <div>{{ form.recurrence_frequency }}</div>
+      </div>
+
+      {% if form.non_field_errors %}
+      <div style="margin-top:1rem;padding:0.75rem;background:#fef2f2;border-radius:0.625rem;color:#dc2626;font-size:0.8rem;border-left:3px solid #ef4444">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <div style="display:flex;gap:0.75rem;margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid #f1f5f9">
+        <button type="submit" class="btn-primary" style="flex:1;text-align:center;padding:0.625rem">
+          <i class="fas fa-save" style="margin-right:6px"></i>{% if edit %}Update{% else %}Save{% endif %} Transaction
+        </button>
+        <a href="{% url 'transaction_list' %}" class="btn-secondary" style="flex:1;text-align:center;padding:0.625rem">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
+    <a href="{% url 'voice_log' %}" class="card" style="text-align:center;text-decoration:none;display:block;padding:1.25rem;cursor:pointer" onmouseover="this.style.boxShadow='0 4px 12px rgba(79,70,229,0.15)'" onmouseout="this.style.boxShadow=''">
+      <i class="fas fa-microphone" style="color:#4f46e5;font-size:1.5rem;display:block;margin-bottom:6px"></i>
+      <p style="font-size:0.8rem;font-weight:600;color:#374151;margin:0">Voice Input</p>
+      <p style="font-size:0.72rem;color:#94a3b8;margin:2px 0 0">Speak to log</p>
+    </a>
+    <a href="{% url 'upload_receipt' %}" class="card" style="text-align:center;text-decoration:none;display:block;padding:1.25rem;cursor:pointer" onmouseover="this.style.boxShadow='0 4px 12px rgba(79,70,229,0.15)'" onmouseout="this.style.boxShadow=''">
+      <i class="fas fa-camera" style="color:#4f46e5;font-size:1.5rem;display:block;margin-bottom:6px"></i>
+      <p style="font-size:0.8rem;font-weight:600;color:#374151;margin:0">Scan Receipt</p>
+      <p style="font-size:0.72rem;color:#94a3b8;margin:2px 0 0">OCR auto-extract</p>
+    </a>
+  </div>
+</div>
+
+<script>
+var typeColors = {
+  expense: {border:'#ef4444', bg:'#fef2f2'},
+  income: {border:'#22c55e', bg:'#f0fdf4'},
+  transfer: {border:'#3b82f6', bg:'#eff6ff'}
+};
+function selectType(val) {
+  ['expense','income','transfer'].forEach(function(t) {
+    var el = document.getElementById('opt_'+t);
+    if (t === val) {
+      el.style.borderColor = typeColors[t].border;
+      el.style.background = typeColors[t].bg;
+    } else {
+      el.style.borderColor = '#e2e8f0';
+      el.style.background = '#fff';
+    }
+  });
+  document.getElementById('type_'+val).checked = true;
+}
+</script>
+{% endblock %}
